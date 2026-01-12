@@ -50,11 +50,15 @@ function checkHit() {
   const playerRect = player.getBoundingClientRect();
   const blockRect = block.getBoundingClientRect();
 
-  if (
+  const hitFromBelow =
+    playerRect.top <= blockRect.bottom &&
+    playerRect.bottom > blockRect.bottom &&
     playerRect.right > blockRect.left &&
-    playerRect.left < blockRect.right &&
-    playerRect.top < blockRect.bottom
-  ) {
+    playerRect.left < blockRect.right;
+
+  if (hitFromBelow) {
     project.classList.remove("hidden");
+    block.style.background = "gold";
   }
 }
+
