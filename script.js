@@ -18,16 +18,32 @@ position = Math.max(0, Math.min(position, window.innerWidth - 40));
 player.style.left = position + "px";
 
 
-  if (e.key === " " && !jumping) {
-    jumping = true;
-    player.style.bottom = "80px";
+ if (e.key === " " && !jumping) {
+  jumping = true;
+  let jumpHeight = 0;
 
-    setTimeout(() => {
-      player.style.bottom = "0px";
-      jumping = false;
-      checkHit();
-    }, 400);
-  }
+  const jumpInterval = setInterval(() => {
+    jumpHeight += 8;
+    player.style.bottom = jumpHeight + "px";
+
+    if (jumpHeight >= 120) {
+      clearInterval(jumpInterval);
+
+      const fallInterval = setInterval(() => {
+        jumpHeight -= 8;
+        player.style.bottom = jumpHeight + "px";
+
+        checkHit();
+
+        if (jumpHeight <= 0) {
+          clearInterval(fallInterval);
+          jumping = false;
+        }
+      }, 20);
+    }
+  }, 20);
+}
+
 });
 
 function checkHit() {
