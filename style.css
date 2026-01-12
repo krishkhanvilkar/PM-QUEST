@@ -4,11 +4,13 @@ body {
 
 #game {
   position: relative;
-  width: 600px;
-  height: 200px;
-  border: 2px solid black;
+  width: 100vw;
+  height: 100vh;
+  border: none;
   overflow: hidden;
+  background: #f5f5f5;
 }
+
 
 #player {
   width: 30px;
