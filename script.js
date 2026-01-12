@@ -6,10 +6,17 @@ let position = 50;
 let jumping = false;
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight") {
-    position += 10;
-    player.style.left = position + "px";
-  }
+ if (e.key === "ArrowRight") {
+  position += 15;
+}
+
+if (e.key === "ArrowLeft") {
+  position -= 15;
+}
+
+position = Math.max(0, Math.min(position, window.innerWidth - 40));
+player.style.left = position + "px";
+
 
   if (e.key === " " && !jumping) {
     jumping = true;
