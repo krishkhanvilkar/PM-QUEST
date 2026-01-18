@@ -1,27 +1,602 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>PM Quest</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krish's Portfolio - Cyber Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            display: block;
+            border: 4px solid #00ffff;
+            box-shadow: 
+                0 0 20px #00ffff,
+                0 0 40px #ff00ff,
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            image-rendering: pixelated;
+        }
+
+        #ui {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            text-shadow: 
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                2px 2px 0px #000;
+            font-size: 18px;
+            z-index: 10;
+            letter-spacing: 3px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        #projectModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a0033 0%, #0d0a1f 100%);
+            border: 3px solid #ff00ff;
+            padding: 35px;
+            max-width: 650px;
+            width: 90%;
+            z-index: 100;
+            box-shadow: 
+                0 0 30px #ff00ff,
+                0 0 60px #00ffff,
+                0 0 0 9999px rgba(0,0,0,0.85);
+            color: #00ffff;
+        }
+
+        #projectModal h2 {
+            font-size: 20px;
+            margin-bottom: 18px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            font-family: 'Orbitron', monospace;
+        }
+
+        #projectModal p {
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 12px;
+            color: #00ffff;
+        }
+
+        #projectModal a {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000;
+            text-decoration: none;
+            border-radius: 5px;
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 15px #ff00ff;
+            transition: all 0.3s;
+        }
+
+        #projectModal a:hover {
+            box-shadow: 0 0 25px #00ffff;
+            transform: scale(1.05);
+        }
+
+        #closeModal {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            background: #ff00ff;
+            color: #000;
+            border: none;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 10px #ff00ff;
+            font-family: 'Orbitron', monospace;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            text-shadow: 
+                0 0 10px #00ffff,
+                2px 2px 0px #000;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.9;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(255, 0, 255, 0.3);
+            border: 1px solid #ff00ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            box-shadow: 0 0 5px #ff00ff;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="ui">
+        PROJECTS UNLOCKED: <span id="projectCount">0</span>/6
+    </div>
 
-<h2>PM Quest – Hit the block to unlock a project</h2>
+    <canvas id="gameCanvas" width="1000" height="700"></canvas>
 
-<div id="game">
-  <div id="player"></div>
-  <div id="block"></div>
-</div>
+    <div id="instructions">
+        <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> or <span class="key">↑</span> <span class="key">←</span> <span class="key">↓</span> <span class="key">→</span> to Move | <span class="key">SPACE</span> or <span class="key">W</span> to Jump<br>
+        Jump under neon blocks to unlock projects!
+    </div>
 
-<div id="project" class="hidden">
-  <h3>Project 01: Improving Zomato Reorders</h3>
-  <p>
-    Problem: Users drop off during late-night reorders.  
-    Decision: One-tap reorder with smart defaults.
-  </p>
-</div>
+    <div id="projectModal">
+        <button id="closeModal">✕ CLOSE</button>
+        <h2 id="projectTitle"></h2>
+        <p id="projectDesc"></p>
+        <p><strong id="projectRole"></strong></p>
+        <p id="projectImpact"></p>
+        <a id="projectLink" href="#" target="_blank">VIEW PROJECT →</a>
+    </div>
 
-<script src="script.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Load cyberpunk background image
+        const bgImage = new Image();
+        bgImage.src = 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="1000" height="700" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0a0a1f;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#1a0a3f;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#2a0a5f;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect width="1000" height="700" fill="url(#skyGrad)"/>
+                <!-- City silhouette -->
+                <rect x="50" y="400" width="100" height="300" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="180" y="350" width="80" height="350" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="290" y="300" width="120" height="400" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="440" y="250" width="90" height="450" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="560" y="320" width="110" height="380" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="700" y="380" width="85" height="320" fill="#0a0a1f" opacity="0.8"/>
+                <rect x="820" y="350" width="95" height="350" fill="#0a0a1f" opacity="0.8"/>
+                <!-- Neon lights -->
+                <circle cx="100" cy="450" r="3" fill="#ff00ff" opacity="0.8"/>
+                <circle cx="220" cy="380" r="3" fill="#00ffff" opacity="0.8"/>
+                <circle cx="350" cy="320" r="3" fill="#ff00ff" opacity="0.8"/>
+                <circle cx="485" cy="280" r="3" fill="#00ffff" opacity="0.8"/>
+                <circle cx="615" cy="340" r="3" fill="#ff00ff" opacity="0.8"/>
+                <circle cx="742" cy="400" r="3" fill="#00ffff" opacity="0.8"/>
+            </svg>
+        `);
+
+        // Game state
+        const game = {
+            score: 0,
+            projectsFound: 0,
+            gravity: 0.6
+        };
+
+        // Player object (Cyberpunk Robot)
+        const player = {
+            x: 100,
+            y: 500,
+            width: 40,
+            height: 50,
+            dx: 0,
+            dy: 0,
+            speed: 5,
+            jumpPower: 14,
+            onGround: false,
+            isDucking: false,
+            direction: 1
+        };
+
+        // Project blocks with cyberpunk styling
+        const projects = [
+            {
+                x: 250, y: 350, width: 60, height: 60, hit: false,
+                title: "E-Commerce Mobile App Redesign",
+                desc: "Led the complete UX overhaul of a shopping app serving 500K+ users. Conducted user research, created wireframes, and managed a cross-functional team of 8.",
+                role: "Product Manager | 6 months",
+                impact: "📈 Result: 40% increase in conversion rate, 25% reduction in cart abandonment",
+                link: "https://github.com/yourusername/project1"
+            },
+            {
+                x: 450, y: 280, width: 60, height: 60, hit: false,
+                title: "AI-Powered Customer Support Dashboard",
+                desc: "Developed product strategy for an ML-based support ticket routing system. Defined features, prioritized backlog, and coordinated with data science team.",
+                role: "Product Manager | 4 months",
+                impact: "⚡ Result: 60% faster response time, 85% customer satisfaction score",
+                link: "https://github.com/yourusername/project2"
+            },
+            {
+                x: 700, y: 350, width: 60, height: 60, hit: false,
+                title: "SaaS Analytics Platform",
+                desc: "Spearheaded the launch of a B2B analytics tool from 0 to 1. Conducted market research, created PRDs, and managed product roadmap.",
+                role: "Product Manager | 8 months",
+                impact: "🚀 Result: 150 enterprise clients onboarded in first quarter",
+                link: "https://github.com/yourusername/project3"
+            },
+            {
+                x: 350, y: 500, width: 60, height: 60, hit: false,
+                title: "Fintech Payment Gateway Integration",
+                desc: "Managed integration of multiple payment providers into existing platform. Balanced technical constraints with user experience requirements.",
+                role: "Product Manager | 3 months",
+                impact: "💳 Result: 99.9% uptime, support for 12 payment methods",
+                link: "https://github.com/yourusername/project4"
+            },
+            {
+                x: 600, y: 200, width: 60, height: 60, hit: false,
+                title: "Healthcare Appointment Booking System",
+                desc: "Launched telemedicine booking feature during COVID-19. Collaborated with healthcare providers and ensured HIPAA compliance.",
+                role: "Product Manager | 5 months",
+                impact: "🏥 Result: 10K+ appointments booked, 4.8/5 user rating",
+                link: "https://github.com/yourusername/project5"
+            },
+            {
+                x: 850, y: 450, width: 60, height: 60, hit: false,
+                title: "Social Media Content Scheduler",
+                desc: "Built MVP for social media management tool. Conducted competitive analysis, defined minimum viable features, and led beta testing.",
+                role: "Product Manager | 4 months",
+                impact: "📱 Result: 2K beta users, featured on Product Hunt",
+                link: "https://github.com/yourusername/project6"
+            }
+        ];
+
+        // Neon platforms
+        const platforms = [
+            { x: 0, y: 650, width: 1000, height: 50 },
+            { x: 200, y: 550, width: 180, height: 25 },
+            { x: 400, y: 480, width: 180, height: 25 },
+            { x: 650, y: 550, width: 180, height: 25 },
+            { x: 250, y: 400, width: 120, height: 25 },
+            { x: 550, y: 330, width: 120, height: 25 },
+            { x: 800, y: 500, width: 150, height: 25 }
+        ];
+
+        // Particles for effects
+        let particles = [];
+
+        // Input handling - WASD + Arrow Keys
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            keys[e.key.toLowerCase()] = true;
+            
+            if ((e.key === ' ' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') && player.onGround) {
+                player.dy = -player.jumpPower;
+                player.onGround = false;
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Draw cyberpunk player
+        function drawPlayer() {
+            const x = player.x;
+            const y = player.isDucking ? player.y + 15 : player.y;
+            const h = player.isDucking ? 35 : player.height;
+            
+            ctx.save();
+            
+            if (player.direction === -1) {
+                ctx.scale(-1, 1);
+                ctx.translate(-x * 2 - player.width, 0);
+            }
+            
+            // Neon glow shadow
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 20;
+            
+            // Body with neon outline
+            const gradient = ctx.createLinearGradient(x, y, x, y + h);
+            gradient.addColorStop(0, '#ff00ff');
+            gradient.addColorStop(1, '#00ffff');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x + 5, y + 15, 30, h - 15);
+            
+            // Head
+            ctx.fillStyle = '#00ffff';
+            ctx.fillRect(x + 8, y, 24, 18);
+            
+            // Visor (glowing eyes)
+            const glowPulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = `rgba(255, 0, 255, ${glowPulse})`;
+            ctx.fillRect(x + 10, y + 6, 20, 6);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Legs
+            if (!player.isDucking) {
+                ctx.fillStyle = '#00ffff';
+                const legOffset = player.onGround ? Math.sin(Date.now() / 100) * 2 : 0;
+                ctx.fillRect(x + 10, y + h - 5, 8, 8 + legOffset);
+                ctx.fillRect(x + 22, y + h - 5, 8, 8 - legOffset);
+            }
+            
+            // Antenna with pulsing tip
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y);
+            ctx.lineTo(x + 20, y - 8);
+            ctx.stroke();
+            
+            const antennaGlow = Math.sin(Date.now() / 150) * 3 + 5;
+            ctx.fillStyle = '#ff00ff';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(x + 20, y - 10, antennaGlow, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // Draw neon project block
+        function drawProject(proj) {
+            const time = Date.now() / 1000;
+            
+            ctx.save();
+            
+            if (proj.hit) {
+                ctx.fillStyle = '#1a1a2e';
+                ctx.shadowBlur = 0;
+            } else {
+                const pulse = Math.sin(time * 4) * 0.3 + 0.7;
+                const gradient = ctx.createLinearGradient(proj.x, proj.y, proj.x + proj.width, proj.y + proj.height);
+                gradient.addColorStop(0, `rgba(255, 0, 255, ${pulse})`);
+                gradient.addColorStop(1, `rgba(0, 255, 255, ${pulse})`);
+                ctx.fillStyle = gradient;
+                
+                ctx.shadowColor = '#ff00ff';
+                ctx.shadowBlur = 25;
+            }
+            
+            ctx.fillRect(proj.x, proj.y, proj.width, proj.height);
+            
+            // Neon border
+            ctx.strokeStyle = proj.hit ? '#555' : '#00ffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = proj.hit ? 0 : 15;
+            ctx.strokeRect(proj.x, proj.y, proj.width, proj.height);
+            
+            // Question mark or checkmark
+            ctx.fillStyle = proj.hit ? '#666' : '#fff';
+            ctx.font = 'bold 32px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = proj.hit ? 'transparent' : '#ff00ff';
+            ctx.shadowBlur = proj.hit ? 0 : 20;
+            ctx.fillText(proj.hit ? '✓' : '?', proj.x + 30, proj.y + 30);
+            
+            ctx.restore();
+        }
+
+        // Draw neon platform
+        function drawPlatform(plat) {
+            ctx.save();
+            
+            // Platform body
+            const gradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.height);
+            gradient.addColorStop(0, '#2a0a3f');
+            gradient.addColorStop(1, '#1a0a2f');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+            
+            // Neon top edge
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(plat.x, plat.y);
+            ctx.lineTo(plat.x + plat.width, plat.y);
+            ctx.stroke();
+            
+            // Side neon strips
+            for (let i = 0; i < plat.width; i += 30) {
+                const stripPulse = Math.sin(Date.now() / 500 + i) * 0.5 + 0.5;
+                ctx.fillStyle = `rgba(255, 0, 255, ${stripPulse * 0.5})`;
+                ctx.fillRect(plat.x + i, plat.y + 5, 2, plat.height - 5);
+            }
+            
+            ctx.restore();
+        }
+
+        // Create neon particles
+        function createParticles(x, y) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random() - 0.5) * 10,
+                    dy: (Math.random() - 0.5) * 10 - 4,
+                    life: 40,
+                    color: Math.random() > 0.5 ? '#ff00ff' : '#00ffff'
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+                p.dy += 0.3;
+                p.life--;
+                return p.life > 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 15;
+                ctx.globalAlpha = p.life / 40;
+                ctx.fillRect(p.x, p.y, 5, 5);
+                ctx.restore();
+            });
+        }
+
+        // Collision detection
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // Show project modal
+        function showProject(proj) {
+            if (!proj.hit) {
+                proj.hit = true;
+                game.projectsFound++;
+                document.getElementById('projectCount').textContent = game.projectsFound;
+                
+                createParticles(proj.x + 30, proj.y + 30);
+                
+                document.getElementById('projectTitle').textContent = proj.title;
+                document.getElementById('projectDesc').textContent = proj.desc;
+                document.getElementById('projectRole').textContent = proj.role;
+                document.getElementById('projectImpact').textContent = proj.impact;
+                document.getElementById('projectLink').href = proj.link;
+                document.getElementById('projectModal').style.display = 'block';
+            }
+        }
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('projectModal').style.display = 'none';
+        });
+
+        // Update game state
+        function update() {
+            player.isDucking = keys['s'] || keys['ArrowDown'];
+            
+            if (keys['a'] || keys['ArrowLeft']) {
+                player.dx = -player.speed;
+                player.direction = -1;
+            } else if (keys['d'] || keys['ArrowRight']) {
+                player.dx = player.speed;
+                player.direction = 1;
+            } else {
+                player.dx = 0;
+            }
+
+            player.x += player.dx;
+            player.y += player.dy;
+            player.dy += game.gravity;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            player.onGround = false;
+            const playerHeight = player.isDucking ? 35 : player.height;
+            
+            platforms.forEach(plat => {
+                const playerRect = { x: player.x, y: player.y, width: player.width, height: playerHeight };
+                if (checkCollision(playerRect, plat)) {
+                    if (player.dy > 0 && player.y + playerHeight - player.dy <= plat.y) {
+                        player.y = plat.y - playerHeight;
+                        player.dy = 0;
+                        player.onGround = true;
+                    }
+                }
+            });
+
+            projects.forEach(proj => {
+                if (checkCollision(player, proj)) {
+                    if (player.dy < 0) {
+                        const playerCenterX = player.x + player.width / 2;
+                        const blockCenterX = proj.x + proj.width / 2;
+                        if (Math.abs(playerCenterX - blockCenterX) < 40) {
+                            player.dy = 2;
+                            showProject(proj);
+                        }
+                    }
+                }
+            });
+
+            if (player.y > canvas.height) {
+                player.x = 100;
+                player.y = 500;
+                player.dy = 0;
+            }
+            
+            updateParticles();
+        }
+
+        // Draw everything
+        function draw() {
+            // Draw cyberpunk background
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            
+            // Add scan lines effect
+            ctx.save();
+            for (let i = 0; i < canvas.height; i += 4) {
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.02)';
+                ctx.fillRect(0, i, canvas.width, 2);
+            }
+            ctx.restore();
+
+            platforms.forEach(drawPlatform);
+            projects.forEach(drawProject);
+            drawParticles();
+            drawPlayer();
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Wait for background to load
+        bgImage.onload = () => {
+            gameLoop();
+        };
+        
+        // Start immediately with fallback
+        gameLoop();
+    </script>
 </body>
 </html>
